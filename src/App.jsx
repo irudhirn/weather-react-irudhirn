@@ -14,6 +14,7 @@ function App() {
   const [alertActive, setAlertActive] = useState(false);
   const [isLoading, setIsloading] = useState(true);
   const [data, setData] = useState({});
+  const [isError, setIsError] = useState(false);
   const [backImg, setBackImg] = useState(
     "https://images.unsplash.com/photo-1454789476662-53eb23ba5907?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=752&q=80"
   );
@@ -29,7 +30,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (localStorage.getItem("weatherData") === null) {
+    if (
+      localStorage.getItem("weatherData") === null ||
+      localStorage.getItem("weatherData") === undefined
+    ) {
       setData(() => {});
       alert("Turn on device location to see results.");
     }
@@ -46,12 +50,25 @@ function App() {
   }, [data]);
 
   const getWeatherLtLn = async (lat, lng) => {
+    setIsError(false);
+
     const res = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=39a9a737b07b4b703e3d1cd1e231eedc`
     );
 
-    if (res.ok === false) return;
+    if (res.ok === false) {
+      setIsloading(false);
+      setIsError(true);
+      return;
+    }
     setIsloading(() => true);
+
+    setTimeout(() => {
+      if (data === {}) {
+        setIsloading(() => false);
+        setIsError(true);
+      }
+    }, 5000);
 
     const climate = await res.json();
 
@@ -61,6 +78,8 @@ function App() {
   };
 
   const getWeatherCity = async (city) => {
+    setIsError(false);
+
     const res = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=39a9a737b07b4b703e3d1cd1e231eedc`
     );
@@ -95,7 +114,7 @@ function App() {
       }}
     >
       <div className={classes.container}>
-        {isLoading && (
+        {isLoading && !isError && (
           <div className={classes["loading-spinner"]}>
             <img
               src="https://forums.synfig.org/uploads/default/original/2X/3/31d749625faa93271be23874d416f9be755b7cb9.gif"
@@ -168,7 +187,7 @@ function App() {
             </div>
           </>
         )}
-        {!data && !isLoading && (
+        {!data && !isLoading && isError && (
           <div>
             <p>Error 404 - Page not found.</p>
             <p>Please refresh.</p>
